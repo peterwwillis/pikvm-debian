@@ -1,0 +1,41 @@
+# Build artifacts
+builds/
+*.o
+*.so
+*.a
+*.deb
+*.rpm
+
+# Temporary files
+tmp/
+.tmp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+*.log
+logs/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Downloaded repositories (build-time)
+/repos/
