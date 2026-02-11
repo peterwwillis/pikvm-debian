@@ -52,7 +52,7 @@ check_directory() {
 echo "System Information:"
 echo "  Hostname: $(hostname)"
 echo "  IP Address: $(hostname -I | cut -d' ' -f1)"
-echo "  OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+echo "  OS: $(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)"
 echo "  Kernel: $(uname -r)"
 echo "  Architecture: $(uname -m)"
 echo ""

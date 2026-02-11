@@ -123,7 +123,7 @@ echo 0x0200 > bcdUSB    # USB 2.0
 mkdir -p strings/0x409
 echo "PiKVM" > strings/0x409/manufacturer
 echo "Composite KVM Device" > strings/0x409/product
-echo "$(cat /proc/cpuinfo | grep Serial | cut -d' ' -f2)" > strings/0x409/serialnumber
+echo "$(grep Serial /proc/cpuinfo | cut -d' ' -f2)" > strings/0x409/serialnumber
 
 # Create configuration
 mkdir -p configs/c.1
