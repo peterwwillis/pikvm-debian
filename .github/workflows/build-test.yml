@@ -1,0 +1,147 @@
+name: Build and Test PiKVM Debian
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-aarch64:
+    name: Build on ARM64/AArch64
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build in ARM64 container
+      run: |
+        docker run --rm --platform linux/arm64 \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          arm64v8/debian:bookworm \
+          bash -c "
+            set -e
+            apt-get update
+            apt-get install -y sudo git
+            
+            # Test package installation script (dry run)
+            echo '=== Testing package installation script ==='
+            bash -n scripts/install-packages.sh
+            
+            # Install basic dependencies for build test
+            apt-get install -y build-essential python3 python3-pip
+            
+            # Test ustreamer build script syntax
+            echo '=== Testing ustreamer build script ==='
+            bash -n scripts/build-ustreamer.sh
+            
+            # Test kvmd install script syntax
+            echo '=== Testing kvmd install script ==='
+            bash -n scripts/install-kvmd.sh
+            
+            # Test system configuration script syntax
+            echo '=== Testing system configuration script ==='
+            bash -n scripts/configure-system.sh
+            
+            echo '=== All script syntax checks passed ==='
+          "
+    
+    - name: Validate script permissions
+      run: |
+        echo "Checking script permissions..."
+        for script in scripts/*.sh; do
+          if [ -f "$script" ]; then
+            if [ ! -x "$script" ]; then
+              echo "ERROR: $script is not executable"
+              exit 1
+            fi
+            echo "✓ $script is executable"
+          fi
+        done
+    
+    - name: Validate documentation
+      run: |
+        echo "Checking for required documentation..."
+        [ -f README.md ] && echo "✓ README.md exists" || exit 1
+        [ -f docs/research-notes.md ] && echo "✓ research-notes.md exists" || exit 1
+        [ -f AGENT_PROMPT.md ] && echo "✓ AGENT_PROMPT.md exists" || exit 1
+        echo "All documentation files present"
+
+  build-ustreamer:
+    name: Build ustreamer from source
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+    
+    - name: Build ustreamer in ARM64 container
+      run: |
+        docker run --rm --platform linux/arm64 \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          arm64v8/debian:bookworm \
+          bash -c "
+            set -e
+            apt-get update
+            apt-get install -y \
+              build-essential \
+              git \
+              libevent-dev \
+              libjpeg-dev \
+              libbsd-dev
+            
+            # Clone and build ustreamer
+            git clone --depth 1 https://github.com/pikvm/ustreamer.git /tmp/ustreamer
+            cd /tmp/ustreamer
+            make
+            
+            # Verify binary was built
+            if [ -f /tmp/ustreamer/ustreamer ]; then
+              echo '=== ustreamer build successful ==='
+              /tmp/ustreamer/ustreamer --version || true
+            else
+              echo '=== ustreamer build failed ==='
+              exit 1
+            fi
+          "
+    
+    - name: Upload ustreamer artifact
+      if: success()
+      run: echo "ustreamer build completed successfully"
+
+  lint-scripts:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install ShellCheck
+      run: sudo apt-get update && sudo apt-get install -y shellcheck
+    
+    - name: Run ShellCheck on scripts
+      run: |
+        echo "Running ShellCheck on all shell scripts..."
+        find scripts -name "*.sh" -type f | while read script; do
+          echo "Checking $script..."
+          shellcheck -x "$script" || exit 1
+        done
+        echo "All scripts passed ShellCheck"
