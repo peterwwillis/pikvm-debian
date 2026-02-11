@@ -39,9 +39,11 @@ cp "$BOOT_CONFIG" "${BOOT_CONFIG}.backup.$(date +%Y%m%d-%H%M%S)"
 
 # Enable USB OTG
 if ! grep -q "dtoverlay=dwc2" "$BOOT_CONFIG"; then
-    echo "" >> "$BOOT_CONFIG"
-    echo "# PiKVM USB OTG configuration" >> "$BOOT_CONFIG"
-    echo "dtoverlay=dwc2,dr_mode=peripheral" >> "$BOOT_CONFIG"
+    {
+        echo ""
+        echo "# PiKVM USB OTG configuration"
+        echo "dtoverlay=dwc2,dr_mode=peripheral"
+    } >> "$BOOT_CONFIG"
     echo "Added dwc2 overlay to $BOOT_CONFIG"
 else
     echo "dwc2 overlay already configured"

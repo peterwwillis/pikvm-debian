@@ -64,7 +64,7 @@ apt-get install -y \
     python3-libgpiod
 
 # Check Debian version for additional packages
-DEBIAN_VERSION=$(cat /etc/debian_version | cut -d. -f1)
+DEBIAN_VERSION=$(cut -d. -f1 < /etc/debian_version)
 if [ "$DEBIAN_VERSION" -ge 12 ]; then
     echo ""
     echo "Step 4: Installing additional packages for Debian 12+..."
